@@ -25,6 +25,7 @@ import shlex
 import signal
 import time
 
+import oslo_devsupport as ods
 from oslo_utils import importutils
 from oslo_utils import strutils
 import six
@@ -210,17 +211,22 @@ def execute(*cmd, **kwargs):
                 preexec_fn = _subprocess_setup
                 close_fds = True
 
-            obj = subprocess.Popen(cmd,
-                                   stdin=_PIPE,
-                                   stdout=_PIPE,
-                                   stderr=_PIPE,
-                                   close_fds=close_fds,
-                                   preexec_fn=preexec_fn,
-                                   shell=shell,
-                                   cwd=cwd,
-                                   env=env_variables)
+            with ods.command_execute(cmd[0],
+                                     cmd[1:],
+                                     env_variables,
+                                     cwd,
+                                     shell):
+                obj = subprocess.Popen(cmd,
+                                       stdin=_PIPE,
+                                       stdout=_PIPE,
+                                       stderr=_PIPE,
+                                       close_fds=close_fds,
+                                       preexec_fn=preexec_fn,
+                                       shell=shell,
+                                       cwd=cwd,
+                                       env=env_variables)
 
-            result = obj.communicate(process_input)
+                result = obj.communicate(process_input)
 
             obj.stdin.close()  # pylint: disable=E1101
             _returncode = obj.returncode  # pylint: disable=E1101
